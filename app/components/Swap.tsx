@@ -1,19 +1,18 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
+import { Suspense } from "react";
 
-import { coins } from '../constants/coins';
+import { useBalance, useProvider } from 'wagmi';
+import { useAccount } from "wagmi";
 
 import useSelectTokenInModal from '@/app/hooks/useSelectTokenInModal';
 import SelectTokenInModal from "./modals/SelectTokenInModal";
 import TokenSelect from "./TokenSelect";
 import useSelectTokenOutModal from "../hooks/useSelectTokenOutModal";
 import SelectTokenOutModal from "./modals/SelectTokenOutModal";
-
-import { Suspense } from "react";
 import Loading from "./Loading";
 import FetchedAmountOut from './server_components/FetchedAmountOut';
-import { useProvider } from 'wagmi';
 import FetchedPriceInCoingecko from './server_components/FetchedPriceInCoingecko';
 import FetchedPriceOutCoingecko from './server_components/FetchedPriceOutCoingecko';
 
@@ -28,6 +27,7 @@ const Swap: React.FC<SwapProps> = ({
 }) => {
   const [isFocus, setIsFocus] = useState(false);
   const provider = useProvider();
+  const { address: userAddress, isConnected: isUserConnected } = useAccount();
   const selectTokenInModal = useSelectTokenInModal();
   const selectTokenOutModal = useSelectTokenOutModal();
 
@@ -38,22 +38,24 @@ const Swap: React.FC<SwapProps> = ({
   };
   const fetchedPriceInCoingecko = useMemo(() => {
     if (amountIn && tokenInAddress) {
-      const selectedCoin = coins.find((coin) => coin.address === tokenInAddress);
-      if (selectedCoin) {
-        return (
-          <Suspense fallback={<Loading width="w-[75px]" height="h-[16px]" />}>
-            <div className='flex gap-0.5'>~$
-            {/* @ts-expect-error Async Server Component */}
-            <FetchedPriceInCoingecko 
-              coingeckoId={selectedCoin.coingeckoId} 
-              amount={amountIn}
-            />
-            </div>
-          </Suspense>
-        );
-      }
+      return (
+        <Suspense fallback={<Loading width="w-[75px]" height="h-[16px]" />}>
+          <div className='flex gap-0.5'>~$
+          {/* @ts-expect-error Async Server Component */}
+          <FetchedPriceInCoingecko 
+            tokenAddress={tokenInAddress} 
+            amount={amountIn}
+          />
+          </div>
+        </Suspense>
+      );
     }
   }, [amountIn, tokenInAddress]);
+  const { data: tokenInBalance } = useBalance({
+    address: userAddress,
+    token: `0x${tokenInAddress?.slice(2)}`,
+  });
+
 
   const fetchedAmountOut = useMemo(() => {
     if (amountIn && tokenInAddress && tokenOutAddress)  {
@@ -95,6 +97,10 @@ const Swap: React.FC<SwapProps> = ({
       )
     }
   }, [amountIn, tokenInAddress, tokenOutAddress, provider]); 
+  const { data: tokenOutBalance } = useBalance({
+    address: userAddress,
+    token: `0x${tokenOutAddress?.slice(2)}`,
+  });
 
   return (
     <div className="p-10">
@@ -123,8 +129,17 @@ const Swap: React.FC<SwapProps> = ({
               />
             </div>
           </div>
-          <div className='px-2'>
-            <p className='text-xs text-gray-400 font-semibold'>{fetchedPriceInCoingecko}</p>
+          <div className='px-2 pt-1'>
+            <div className='text-xs flex justify-between text-gray-400 font-semibold'>
+              <div>{fetchedPriceInCoingecko}</div> 
+                {tokenInBalance && (
+                  <Suspense fallback={<Loading width="w-[75px]" height="h-[16px]" />}>
+                    <div className='flex gap-0.5'>Balance:
+                      <p>{tokenInBalance.formatted}</p>
+                    </div>
+                  </Suspense>
+                )}
+            </div>
           </div>
         </div>
 
@@ -132,9 +147,9 @@ const Swap: React.FC<SwapProps> = ({
         justify-center items-center">
           <div className='flex'>
             <div className='w-3/5'>
-              <p className='px-2 rounded-xl bg-transparent text-white text-2xl'>
+              <div className='px-2 rounded-xl bg-transparent text-white text-2xl'>
                 {fetchedAmountOut}
-              </p>
+              </div>
             </div>
             <div className="w-2/5">
               <TokenSelect 
@@ -143,8 +158,17 @@ const Swap: React.FC<SwapProps> = ({
               />
             </div>
           </div>
-          <div className='px-2'>
-              <p className='text-xs text-gray-400 font-semibold'>{fetchedPriceOutCoingecko}</p>
+          <div className='px-2 pt-1'>
+            <div className='text-xs flex justify-between text-gray-400 font-semibold'>
+              <div>{fetchedPriceOutCoingecko}</div> 
+              {tokenOutBalance && (
+                <Suspense fallback={<Loading width="w-[75px]" height="h-[16px]" />}>
+                  <div className='flex gap-0.5'>Balance:
+                    <p>{tokenOutBalance.formatted}</p>
+                  </div>
+                </Suspense>
+              )}
+            </div>
           </div>
         </div>
 
@@ -152,7 +176,8 @@ const Swap: React.FC<SwapProps> = ({
         bg-gradient-to-r from-violet-500 via-violet-600 to-violet-700 hover:bg-gradient-to-br
         rounded-xl hover:opacity-80 transition">
           Swap
-        </button>        
+        </button>       
+
       </div>
       <SelectTokenInModal />
       <SelectTokenOutModal />

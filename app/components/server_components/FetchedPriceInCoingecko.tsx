@@ -1,15 +1,19 @@
 import { fetchPriceCoingecko } from "@/app/actions/fetchPriceCoingecko";
+import { coins } from "@/app/constants/coins";
 
 interface FetchedPriceInCoingeckoProps {
-  coingeckoId?: string;
+  tokenAddress?: string;
   amount: any;
 }
 
-const FetchedPriceInCoingecko = async ({ coingeckoId, amount }: FetchedPriceInCoingeckoProps) => {
+const FetchedPriceInCoingecko = async ({ tokenAddress, amount }: FetchedPriceInCoingeckoProps) => {
   let fetchedPriceInCoingecko: string | null = "";
 
-  if (coingeckoId && amount) {
-    fetchedPriceInCoingecko = await fetchPriceCoingecko(coingeckoId, amount);
+  if (tokenAddress && amount) {
+    const selectedCoin = coins.find((coin) => coin.address === tokenAddress);
+    if (selectedCoin) {
+      fetchedPriceInCoingecko = await fetchPriceCoingecko(selectedCoin.coingeckoId, amount);
+    }
   }
 
   return (
