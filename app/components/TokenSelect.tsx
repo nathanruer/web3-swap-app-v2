@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 
+import { coins } from "../constants/coins";
+
 import { useProvider } from "wagmi";
 import TokenSymbol from "./server_components/TokenSymbol";
 import { Suspense } from "react";
@@ -22,20 +24,24 @@ const TokenSelect: React.FC<TokenSelectProps> = ({
 
   const tokenSymbol = useMemo(() => {
     if (tokenAddress) {
-      return (
-        <Suspense fallback={<Loading width="w-[75px]" height="h-[24px]"/>}>
-          {/* @ts-expect-error Async Server Component */}
-          <TokenSymbol tokenAddress={tokenAddress} provider={provider} />
-        </Suspense>
-      )
+      const coinInDatabase = coins.find((coin) => coin.address === tokenAddress);
+      if (coinInDatabase) {
+        return coinInDatabase.symbol;
+      } else {
+        return (
+          <Suspense fallback={<Loading width="w-[75px]" height="h-[24px]" />}>
+            {/* @ts-expect-error Async Server Component */}
+            <TokenSymbol tokenAddress={tokenAddress} provider={provider} />
+          </Suspense>
+        );
+      }
     } else {
       return (
-        <div>
         <p>Select Token</p>
-      </div>
-      )
+      );
     }
   }, [tokenAddress, provider]);
+  
 
   return (
     <button className="flex w-full text-white text-base
