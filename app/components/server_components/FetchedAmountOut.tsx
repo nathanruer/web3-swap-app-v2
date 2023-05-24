@@ -1,9 +1,9 @@
 import { Provider } from "@wagmi/core";
-import { quoteAmount_1Inch } from "../actions/quoteAmount_1Inch";
+import { quoteAmount_1Inch } from "../../actions/quoteAmount_1Inch";
 
 interface FetchedAmountOutProps {
-  tokenInAddress: string | null | undefined;
-  tokenOutAddress: string | null | undefined;
+  tokenInAddress?: string;
+  tokenOutAddress?: string;
   amountIn: string;
   provider: Provider;
 }

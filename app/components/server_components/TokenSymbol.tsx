@@ -1,4 +1,4 @@
-import { getTokenSymbol } from "../actions/getTokenSymbol";
+import { getTokenSymbol } from "../../actions/getTokenSymbol";
 import { Provider } from "@wagmi/core";
 
 const TokenSymbol = async ({ tokenAddress, provider }: { tokenAddress: string | null, provider: Provider }) => {

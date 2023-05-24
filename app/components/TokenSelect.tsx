@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import { useProvider } from "wagmi";
-import TokenSymbol from "./TokenSymbol";
+import TokenSymbol from "./server_components/TokenSymbol";
 import { Suspense } from "react";
 import Loading from "./Loading";
 
