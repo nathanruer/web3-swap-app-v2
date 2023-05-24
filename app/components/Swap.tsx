@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { Suspense } from "react";
 
-import { useBalance, useProvider } from 'wagmi';
+import { useProvider } from 'wagmi';
 import { useAccount } from "wagmi";
 
 import useSelectTokenInModal from '@/app/hooks/useSelectTokenInModal';
@@ -15,6 +15,7 @@ import Loading from "./Loading";
 import FetchedAmountOut from './server_components/FetchedAmountOut';
 import FetchedPriceInCoingecko from './server_components/FetchedPriceInCoingecko';
 import FetchedPriceOutCoingecko from './server_components/FetchedPriceOutCoingecko';
+import TokenBalance from './server_components/TokenBalance';
 
 interface SwapProps {
   tokenInAddress?: string | null;
@@ -27,7 +28,7 @@ const Swap: React.FC<SwapProps> = ({
 }) => {
   const [isFocus, setIsFocus] = useState(false);
   const provider = useProvider();
-  const { address: userAddress, isConnected: isUserConnected } = useAccount();
+  const { address: userAddress } = useAccount();
   const selectTokenInModal = useSelectTokenInModal();
   const selectTokenOutModal = useSelectTokenOutModal();
 
@@ -51,11 +52,24 @@ const Swap: React.FC<SwapProps> = ({
       );
     }
   }, [amountIn, tokenInAddress]);
-  const { data: tokenInBalance } = useBalance({
-    address: userAddress,
-    token: `0x${tokenInAddress?.slice(2)}`,
-  });
-
+  const tokenInBalance = useMemo(() => {
+    if (tokenInAddress) {
+      return (
+        <Suspense fallback={<Loading width="w-[75px]" height="h-[16px]"/>}>
+          {/* @ts-expect-error Async Server Component */}
+          <TokenBalance 
+            tokenAddress={tokenInAddress} 
+            userAddress={userAddress}
+            provider={provider} 
+          />
+        </Suspense>
+      )
+    } else {
+      return (
+        null
+      )
+    }
+  }, [tokenInAddress, userAddress, provider]);
 
   const fetchedAmountOut = useMemo(() => {
     if (amountIn && tokenInAddress && tokenOutAddress)  {
@@ -97,10 +111,24 @@ const Swap: React.FC<SwapProps> = ({
       )
     }
   }, [amountIn, tokenInAddress, tokenOutAddress, provider]); 
-  const { data: tokenOutBalance } = useBalance({
-    address: userAddress,
-    token: `0x${tokenOutAddress?.slice(2)}`,
-  });
+  const tokenOutBalance = useMemo(() => {
+    if (tokenOutAddress) {
+      return (
+        <Suspense fallback={<Loading width="w-[75px]" height="h-[16px]"/>}>
+          {/* @ts-expect-error Async Server Component */}
+          <TokenBalance 
+            tokenAddress={tokenOutAddress} 
+            userAddress={userAddress}
+            provider={provider} 
+          />
+        </Suspense>
+      )
+    } else {
+      return (
+        null
+      )
+    }
+  }, [tokenInAddress, userAddress, provider]);
 
   return (
     <div className="p-10">
@@ -132,13 +160,7 @@ const Swap: React.FC<SwapProps> = ({
           <div className='px-2 pt-1'>
             <div className='text-xs flex justify-between text-gray-400 font-semibold'>
               <div>{fetchedPriceInCoingecko}</div> 
-                {tokenInBalance && (
-                  <Suspense fallback={<Loading width="w-[75px]" height="h-[16px]" />}>
-                    <div className='flex gap-0.5'>Balance:
-                      <p>{tokenInBalance.formatted}</p>
-                    </div>
-                  </Suspense>
-                )}
+              <div>{tokenInBalance}</div>
             </div>
           </div>
         </div>
@@ -161,13 +183,7 @@ const Swap: React.FC<SwapProps> = ({
           <div className='px-2 pt-1'>
             <div className='text-xs flex justify-between text-gray-400 font-semibold'>
               <div>{fetchedPriceOutCoingecko}</div> 
-              {tokenOutBalance && (
-                <Suspense fallback={<Loading width="w-[75px]" height="h-[16px]" />}>
-                  <div className='flex gap-0.5'>Balance:
-                    <p>{tokenOutBalance.formatted}</p>
-                  </div>
-                </Suspense>
-              )}
+              <div>{tokenOutBalance}</div>
             </div>
           </div>
         </div>
@@ -176,7 +192,7 @@ const Swap: React.FC<SwapProps> = ({
         bg-gradient-to-r from-violet-500 via-violet-600 to-violet-700 hover:bg-gradient-to-br
         rounded-xl hover:opacity-80 transition">
           Swap
-        </button>       
+        </button>    
 
       </div>
       <SelectTokenInModal />
