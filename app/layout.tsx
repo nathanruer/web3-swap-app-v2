@@ -7,9 +7,29 @@ import { getDefaultWallets, RainbowKitProvider, darkTheme } from '@rainbow-me/ra
 import { configureChains, createClient, WagmiConfig } from 'wagmi';
 import { mainnet, goerli, polygon, arbitrum, optimism, avalanche } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
+import { Chain } from 'wagmi/chains';
 
+const localhostChain: Chain = {
+  id: 31337,
+  name: 'Localhost',
+  network: 'localhost',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ethereum',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['http://localhost:8545'],
+    },
+    public: {
+      http: ['https://localhost:8545'],
+    },
+  },
+  testnet: false,
+};
 const { chains, provider } = configureChains(
-  [mainnet, goerli, polygon, arbitrum, optimism, avalanche],
+  [mainnet, localhostChain],
   [publicProvider()]
 );
 

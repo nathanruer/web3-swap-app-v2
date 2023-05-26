@@ -28,3 +28,13 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background-color: #31343d;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #6528c6;
+}

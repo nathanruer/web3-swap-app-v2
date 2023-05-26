@@ -3,8 +3,8 @@
 import { useCallback, useState, useMemo } from "react";
 import qs from 'query-string';
 import { useRouter, useSearchParams } from "next/navigation";
-
 import { Suspense } from "react";
+
 import TokenSymbol from "../server_components/TokenSymbol";
 import TokenName from "../server_components/TokenName";
 
@@ -53,7 +53,7 @@ const SelectTokenInModal = () => {
       <input
         type="text"
         placeholder="Search... (Symbol or Address)"
-        className="p-1.5 w-full"
+        className="p-1.5 px-3 w-full"
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
         onFocus={() => setIsInputFocused(true)}

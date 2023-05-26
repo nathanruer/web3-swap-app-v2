@@ -13,9 +13,20 @@ export async function quoteAmount_1Inch(
   const apiUrl = 'https://api.1inch.io/v5.0/1/quote';
 
   try {
-    const tokenInDecimals = await getTokenDecimals(tokenInAddress, provider);
-    const tokenOutDecimals = await getTokenDecimals(tokenOutAddress, provider);
-    const amountInParsed = ethers.utils.parseUnits(amountIn, tokenInDecimals);
+    let amountInParsed: ethers.BigNumber;
+    const isTokenInETH = tokenInAddress.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+    const isTokenOutETH = tokenOutAddress.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+
+    if (isTokenInETH) {
+      amountInParsed = ethers.utils.parseEther(amountIn);
+    } else {
+      const tokenInDecimals = await getTokenDecimals(tokenInAddress, provider);
+      amountInParsed = ethers.utils.parseUnits(amountIn, tokenInDecimals);
+    }
+
+    const tokenOutDecimals = isTokenOutETH
+      ? 18 // Si le token de sortie est l'ETH natif, nous considérons qu'il a 18 décimales
+      : await getTokenDecimals(tokenOutAddress, provider);
 
     const response = await axios.get(apiUrl, {
       params: {

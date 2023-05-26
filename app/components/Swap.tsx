@@ -1,21 +1,24 @@
 'use client';
 
-import { useState, useMemo } from 'react'
+import axios from 'axios';
+
+import { useState, useMemo, useEffect } from 'react'
 import { Suspense } from "react";
 
-import { useProvider } from 'wagmi';
-import { useAccount } from "wagmi";
+import { useProvider, useAccount, useSendTransaction } from 'wagmi';
 
+import useSelectTokenOutModal from "@/app/hooks/useSelectTokenOutModal";
 import useSelectTokenInModal from '@/app/hooks/useSelectTokenInModal';
 import SelectTokenInModal from "./modals/SelectTokenInModal";
-import TokenSelect from "./TokenSelect";
-import useSelectTokenOutModal from "../hooks/useSelectTokenOutModal";
 import SelectTokenOutModal from "./modals/SelectTokenOutModal";
+import TokenSelect from "./TokenSelect";
 import Loading from "./Loading";
+
 import FetchedAmountOut from './server_components/FetchedAmountOut';
 import FetchedPriceInCoingecko from './server_components/FetchedPriceInCoingecko';
 import FetchedPriceOutCoingecko from './server_components/FetchedPriceOutCoingecko';
 import TokenBalance from './server_components/TokenBalance';
+import { formatAmount } from '../actions/formatAmount';
 
 interface SwapProps {
   tokenInAddress?: string | null;
@@ -27,8 +30,10 @@ const Swap: React.FC<SwapProps> = ({
   tokenOutAddress,
 }) => {
   const [isFocus, setIsFocus] = useState(false);
+
   const provider = useProvider();
-  const { address: userAddress } = useAccount();
+  const { address: userAddress, isConnected: isUserConnected } = useAccount();
+
   const selectTokenInModal = useSelectTokenInModal();
   const selectTokenOutModal = useSelectTokenOutModal();
 
@@ -41,7 +46,7 @@ const Swap: React.FC<SwapProps> = ({
     if (amountIn && tokenInAddress) {
       return (
         <Suspense fallback={<Loading width="w-[75px]" height="h-[16px]" />}>
-          <div className='flex gap-0.5'>~$
+          <div className='flex gap-0.5'>
           {/* @ts-expect-error Async Server Component */}
           <FetchedPriceInCoingecko 
             tokenAddress={tokenInAddress} 
@@ -94,7 +99,7 @@ const Swap: React.FC<SwapProps> = ({
     if (amountIn && tokenInAddress && tokenOutAddress)  {
       return (
         <Suspense fallback={<Loading width="w-[75px]" height="h-[16px]"/>}>
-          <div className='flex gap-0.5'>~$
+          <div className='flex gap-0.5'>
             {/* @ts-expect-error Async Server Component */}
             <FetchedPriceOutCoingecko 
               tokenInAddress={tokenInAddress} 
@@ -129,6 +134,57 @@ const Swap: React.FC<SwapProps> = ({
       )
     }
   }, [tokenInAddress, userAddress, provider]);
+
+  const [txDetails, setTxDetails] = useState({
+    to: undefined,
+    data: undefined,
+    value: undefined,
+  });
+  const { data, sendTransaction } = useSendTransaction({
+    mode: 'recklesslyUnprepared',
+    request: {
+      from: userAddress,
+      to: txDetails.to,
+      data: txDetails.data,
+      value: txDetails.value,
+    },
+  });
+  
+  useEffect(() => {
+    if (txDetails.to && txDetails.data && txDetails.value && isUserConnected) {
+      sendTransaction();
+    }
+  }, [txDetails]);
+
+  const [isApproved, setIsApproved] = useState(false);
+  useEffect(() => {
+    const checkApprovalStatus = async () => {
+      if (tokenInAddress && userAddress) {
+        const allowance = await axios.get(`https://api.1inch.io/v5.0/1/approve/allowance?tokenAddress=${tokenInAddress}&walletAddress=${userAddress}`);
+        setIsApproved(allowance.data.allowance !== "0");
+      }
+    };
+    checkApprovalStatus();
+  }, [tokenInAddress]);
+
+  const handleSwap = async () => {
+    if (tokenInAddress && tokenOutAddress && amountIn) {
+      const formattedAmountIn = await formatAmount(tokenInAddress, amountIn, provider);
+      if (isApproved) {
+        const tx = await axios.get(`https://api.1inch.io/v5.0/1/swap?fromTokenAddress=${tokenInAddress}&toTokenAddress=${tokenOutAddress}}&amount=${formattedAmountIn}&fromAddress=${userAddress}&slippage=5`);
+        setTxDetails(tx.data.tx);
+      } else {
+        const allowance = await axios.get(`https://api.1inch.io/v5.0/1/approve/allowance?tokenAddress=${tokenInAddress}&walletAddress=${userAddress}`);
+        if (allowance.data.allowance === "0") {
+          const approve = await axios.get(`https://api.1inch.io/v5.0/1/approve/transaction?tokenAddress=${tokenInAddress}&amount=${formattedAmountIn}`);
+          setTxDetails(approve.data);
+          setIsApproved(true);
+          return;
+        }
+      }
+    }
+  };
+  
 
   return (
     <div className="p-10">
@@ -188,11 +244,12 @@ const Swap: React.FC<SwapProps> = ({
           </div>
         </div>
 
-        <button className="flex justify-center w-full mt-4 py-2.5 
-        bg-gradient-to-r from-violet-500 via-violet-600 to-violet-700 hover:bg-gradient-to-br
-        rounded-xl hover:opacity-80 transition">
-          Swap
-        </button>    
+        <button className="flex justify-center w-full mt-4 py-2.5 bg-gradient-to-r
+        from-violet-500 via-violet-600 to-violet-700 hover:bg-gradient-to-br 
+        rounded-xl hover:opacity-80 transition"
+        onClick={handleSwap}>
+          {isApproved ? 'Swap' : 'Approve'}
+        </button>
 
       </div>
       <SelectTokenInModal />

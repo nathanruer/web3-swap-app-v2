@@ -7,7 +7,7 @@ export async function getTokenName(tokenAddress: string, provider: Provider): Pr
     const name = await contract.name();
     return name;
   } catch (error) {
-    console.error('Failed to fetch token name:', error);
+    // console.error('Failed to fetch token name:', error);
     return '';
   }
 }

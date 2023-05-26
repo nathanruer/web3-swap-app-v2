@@ -1,12 +1,12 @@
 'use client';
 
 import { Suspense } from "react";
-import TokenSymbol from "../server_components/TokenSymbol";
-import TokenName from "../server_components/TokenName";
-
 import { useCallback, useState, useMemo } from "react";
 import qs from 'query-string';
 import { useRouter, useSearchParams } from "next/navigation";
+
+import TokenSymbol from "../server_components/TokenSymbol";
+import TokenName from "../server_components/TokenName";
 
 import Loading from "../Loading";
 import Modal from "./Modal";
@@ -53,7 +53,7 @@ const SelectTokenOutModal = () => {
       <input
         type="text"
         placeholder="Search... (Symbol or Address)"
-        className="p-1.5 w-full"
+        className="py-1.5 px-3 w-full"
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
         onFocus={() => setIsInputFocused(true)}
@@ -92,7 +92,7 @@ const SelectTokenOutModal = () => {
       {filteredCoins.length > 0 ? (
         filteredCoins.map((coin, index) => (
           <div key={index}>
-            <button onClick={() => handleClick('from', coin.address)}
+            <button onClick={() => handleClick('to', coin.address)}
             className="py-1.5 text-md">
               {coin.name} ({coin.symbol})
             </button>

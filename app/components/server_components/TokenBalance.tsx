@@ -12,9 +12,10 @@ const TokenBalance = async ({ tokenAddress, userAddress, provider }: TokenBalanc
 
   if (tokenAddress && userAddress) {
     balance = await getTokenBalance(tokenAddress, userAddress, provider);
+    return <div className="flex gap-0.5">Balance: {balance}</div>;
+  } else {
+    return null;
   }
-
-  return <div className="flex gap-0.5">Balance: {balance}</div>;
 };
 
 export default TokenBalance;

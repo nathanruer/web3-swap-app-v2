@@ -24,7 +24,7 @@ const FetchedPriceOutCoingecko = async ({ tokenInAddress, tokenOutAddress, amoun
 
   return (
     <div>
-      {fetchedPriceOutCoingecko || "Price not available"}
+      {fetchedPriceOutCoingecko ? `~$ ${fetchedPriceOutCoingecko}` : "Price not available"}
     </div>
   )
 };

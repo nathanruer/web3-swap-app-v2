@@ -18,7 +18,7 @@ const FetchedPriceInCoingecko = async ({ tokenAddress, amount }: FetchedPriceInC
 
   return (
     <div>
-      {fetchedPriceInCoingecko || "Price not available"}
+      {fetchedPriceInCoingecko ? `~$ ${fetchedPriceInCoingecko}` : "Price not available"}
     </div>
   );
 };

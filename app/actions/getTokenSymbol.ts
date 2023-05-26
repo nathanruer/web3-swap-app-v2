@@ -7,7 +7,7 @@ export async function getTokenSymbol(tokenAddress: string, provider: Provider): 
     const symbol = await contract.symbol();
     return symbol;
   } catch (error) {
-    console.error('Failed to fetch token symbol:', error);
-    return '';
+    // console.error('Failed to fetch token symbol:', error);
+    return 'No token found';
   }
 }
