@@ -21,11 +21,13 @@ import TokenBalance from './server_components/TokenBalance';
 import { formatAmount } from '../actions/formatAmount';
 
 interface SwapProps {
+  chain?: string | null;
   tokenInAddress?: string | null;
   tokenOutAddress?: string | null;
 }
 
 const Swap: React.FC<SwapProps> = ({
+  chain,
   tokenInAddress,
   tokenOutAddress,
 }) => {
@@ -51,6 +53,7 @@ const Swap: React.FC<SwapProps> = ({
           <FetchedPriceInCoingecko 
             tokenAddress={tokenInAddress} 
             amount={amountIn}
+            chain={chain}
           />
           </div>
         </Suspense>
@@ -106,6 +109,7 @@ const Swap: React.FC<SwapProps> = ({
               tokenOutAddress={tokenOutAddress}
               amountIn={amountIn}
               provider={provider} 
+              chain={chain}
             />
           </div>
         </Suspense>
@@ -149,7 +153,6 @@ const Swap: React.FC<SwapProps> = ({
       value: txDetails.value,
     },
   });
-  
   useEffect(() => {
     if (txDetails.to && txDetails.data && txDetails.value && isUserConnected) {
       sendTransaction();
@@ -159,13 +162,14 @@ const Swap: React.FC<SwapProps> = ({
   const [isApproved, setIsApproved] = useState(false);
   useEffect(() => {
     const checkApprovalStatus = async () => {
-      if (tokenInAddress && userAddress) {
+      if (tokenInAddress && amountIn && userAddress) {
+        const formattedAmountIn = await formatAmount(tokenInAddress, amountIn, provider);
         const allowance = await axios.get(`https://api.1inch.io/v5.0/1/approve/allowance?tokenAddress=${tokenInAddress}&walletAddress=${userAddress}`);
-        setIsApproved(allowance.data.allowance !== "0");
+        setIsApproved(allowance.data.allowance > formattedAmountIn);
       }
     };
     checkApprovalStatus();
-  }, [tokenInAddress]);
+  }, [tokenInAddress, amountIn, provider, userAddress]);
 
   const handleSwap = async () => {
     if (tokenInAddress && tokenOutAddress && amountIn) {
@@ -175,7 +179,7 @@ const Swap: React.FC<SwapProps> = ({
         setTxDetails(tx.data.tx);
       } else {
         const allowance = await axios.get(`https://api.1inch.io/v5.0/1/approve/allowance?tokenAddress=${tokenInAddress}&walletAddress=${userAddress}`);
-        if (allowance.data.allowance === "0") {
+        if (allowance.data.allowance < formattedAmountIn) {
           const approve = await axios.get(`https://api.1inch.io/v5.0/1/approve/transaction?tokenAddress=${tokenInAddress}&amount=${formattedAmountIn}`);
           setTxDetails(approve.data);
           setIsApproved(true);
@@ -185,11 +189,12 @@ const Swap: React.FC<SwapProps> = ({
     }
   };
   
-
   return (
     <div className="p-10">
       <div className="w-full md:w-4/5 lg:w-3/5 xl:w-1/2 mx-auto rounded-3xl 
       bg-neutral-700/10 shadow-2xl shadow-[#141619] p-10">
+
+        {/* TODO: ADD A BUTTON "SWITCH CHAIN" THAT REDIRECT TO ?chain={newChain} */}
         
         <div className={`p-3 rounded-xl mb-1 bg-[#141619] gap-1
         justify-center items-center
@@ -210,6 +215,7 @@ const Swap: React.FC<SwapProps> = ({
               <TokenSelect 
                 tokenAddress={tokenInAddress}
                 modal={selectTokenInModal}
+                chain={chain}
               />
             </div>
           </div>
@@ -233,6 +239,7 @@ const Swap: React.FC<SwapProps> = ({
               <TokenSelect 
                 tokenAddress={tokenOutAddress}
                 modal={selectTokenOutModal}
+                chain={chain}
               />
             </div>
           </div>
@@ -252,8 +259,12 @@ const Swap: React.FC<SwapProps> = ({
         </button>
 
       </div>
-      <SelectTokenInModal />
-      <SelectTokenOutModal />
+      <SelectTokenInModal 
+        chain={chain}
+      />
+      <SelectTokenOutModal 
+        chain={chain}
+      />
     </div>
   )
 }

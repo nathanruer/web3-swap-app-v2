@@ -8,6 +8,7 @@ export const metadata = {
 }
 
 interface IPathParams {
+  chain?: string;
   from?: string;
   to?: string;
 }
@@ -21,6 +22,7 @@ const Home = async ({ searchParams }: HomeProps) => {
     <>
       <Navbar />
       <Swap 
+        chain={searchParams.chain}
         tokenInAddress={searchParams.from}
         tokenOutAddress={searchParams.to}
       />

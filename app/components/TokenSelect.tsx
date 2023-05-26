@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 
-import { coins } from "../constants/coins";
+import { tokenTable, Token } from "../constants/tokenTable";
 
 import { useProvider } from "wagmi";
 import TokenSymbol from "./server_components/TokenSymbol";
@@ -14,19 +14,21 @@ import { MdOutlineKeyboardArrowDown } from "react-icons/md";
 interface TokenSelectProps {
   tokenAddress: string | null | undefined;
   modal: any;
+  chain: string | null | undefined;
 }
 
 const TokenSelect: React.FC<TokenSelectProps> = ({
   tokenAddress,
   modal,
+  chain,
 }) => {
   const provider = useProvider();
 
   const tokenSymbol = useMemo(() => {
-    if (tokenAddress) {
-      const coinInDatabase = coins.find((coin) => coin.address === tokenAddress);
-      if (coinInDatabase) {
-        return coinInDatabase.symbol;
+    if (tokenAddress && chain) {
+      const selectedToken = tokenTable[chain]?.find((token: Token) => token.address === tokenAddress);
+      if (selectedToken) {
+        return selectedToken.symbol;
       } else {
         return (
           <Suspense fallback={<Loading width="w-[75px]" height="h-[24px]" />}>
@@ -40,7 +42,9 @@ const TokenSelect: React.FC<TokenSelectProps> = ({
         <p>Select Token</p>
       );
     }
-  }, [tokenAddress, provider]);
+  }, [tokenAddress, provider, tokenTable]);
+  
+  
   
 
   return (

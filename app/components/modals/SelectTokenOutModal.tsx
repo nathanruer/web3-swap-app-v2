@@ -1,21 +1,25 @@
 'use client';
 
-import { Suspense } from "react";
 import { useCallback, useState, useMemo } from "react";
 import qs from 'query-string';
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 import TokenSymbol from "../server_components/TokenSymbol";
 import TokenName from "../server_components/TokenName";
 
-import Loading from "../Loading";
 import Modal from "./Modal";
 import useSelectTokenOutModal from '@/app/hooks/useSelectTokenOutModal';
+import Loading from "../Loading";
 
-import { coins } from "@/app/constants/coins";
 import { useProvider } from "wagmi";
+import { tokenTable, Token } from "@/app/constants/tokenTable";
 
-const SelectTokenOutModal = () => {
+interface SelectTokenOutModalProps {
+  chain: string | null | undefined;
+}
+
+const SelectTokenOutModal = ({ chain }: SelectTokenOutModalProps) => {
   const provider = useProvider();
   const selectTokenOutModal = useSelectTokenOutModal();
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -40,20 +44,13 @@ const SelectTokenOutModal = () => {
     selectTokenOutModal.onClose();
   }, [router, params, selectTokenOutModal]);
 
-  const filteredCoins = coins.filter(
-    (coin) =>
-      coin.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-      coin.symbol.toLowerCase().includes(searchValue.toLowerCase()) ||
-      coin.address.toLowerCase() === searchValue.toLowerCase()
-  );  
-
   const headContent = (
-    <div className={`bg-[#141619] rounded-xl border hover:border-violet-500 transition
-    ${isInputFocused ? 'border-violet-500' : 'border-[#31343d]'}`}>
+    <div className={`bg-[#141619] rounded-xl border hover:border-violet-500 transition ${
+    isInputFocused ? "border-violet-500" : "border-[#31343d]"}`}>
       <input
         type="text"
         placeholder="Search... (Symbol or Address)"
-        className="py-1.5 px-3 w-full"
+        className="p-1.5 px-3 w-full"
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
         onFocus={() => setIsInputFocused(true)}
@@ -87,26 +84,37 @@ const SelectTokenOutModal = () => {
     }
   }, [searchValue, provider]);
 
+
+  const tokens = chain ? tokenTable[chain] || [] : [];
+  const filteredTokens = tokens.filter(
+    (token) =>
+      token.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      token.symbol.toLowerCase().includes(searchValue.toLowerCase()) ||
+      token.address.toLowerCase() === searchValue.toLowerCase()
+  );
   const bodyContent = (
     <div>
-      {filteredCoins.length > 0 ? (
-        filteredCoins.map((coin, index) => (
-          <div key={index}>
-            <button onClick={() => handleClick('to', coin.address)}
-            className="py-1.5 text-md">
-              {coin.name} ({coin.symbol})
-            </button>
-            <hr className="border-[#31343d]" />
+      {filteredTokens.length > 0 ? (
+        <>
+          {filteredTokens.map((token: Token, index: number) => (
+            <div key={index}>
+              <button
+                onClick={() => handleClick('to', token.address)}
+                className="py-1.5 text-md"
+              >
+                {token.name} ({token.symbol})
+              </button>
+              <hr className="border-[#31343d]" />
+            </div>
+          ))}
+        </>
+      ) : (
+        <button onClick={() => handleClick('to', searchValue)}
+        className="py-1.5 text-md">
+          <div className="flex gap-1">
+            {tokenName} {tokenSymbol}
           </div>
-        )
-      )
-    ) : (
-      <button onClick={() => handleClick('to', searchValue)}
-      className="py-1.5 text-md">
-        <div className="flex gap-1">
-          {tokenName} {tokenSymbol}
-        </div>
-      </button>
+        </button>
       )}
     </div>
   );

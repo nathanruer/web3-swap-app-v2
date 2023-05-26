@@ -5,7 +5,7 @@ import './globals.css'
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultWallets, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { configureChains, createClient, WagmiConfig } from 'wagmi';
-import { mainnet, goerli, polygon, arbitrum, optimism, avalanche } from 'wagmi/chains';
+import { mainnet, arbitrum } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 import { Chain } from 'wagmi/chains';
 
@@ -29,7 +29,7 @@ const localhostChain: Chain = {
   testnet: false,
 };
 const { chains, provider } = configureChains(
-  [mainnet, localhostChain],
+  [mainnet, arbitrum, localhostChain],
   [publicProvider()]
 );
 

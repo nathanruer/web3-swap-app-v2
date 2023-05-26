@@ -12,10 +12,14 @@ import Modal from "./Modal";
 import useSelectTokenInModal from '@/app/hooks/useSelectTokenInModal';
 import Loading from "../Loading";
 
-import { coins } from "@/app/constants/coins";
 import { useProvider } from "wagmi";
+import { tokenTable, Token } from "@/app/constants/tokenTable";
 
-const SelectTokenInModal = () => {
+interface SelectTokenInModalProps {
+  chain: string | null | undefined;
+}
+
+const SelectTokenInModal = ({ chain }: SelectTokenInModalProps) => {
   const provider = useProvider();
   const selectTokenInModal = useSelectTokenInModal();
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -40,16 +44,9 @@ const SelectTokenInModal = () => {
     selectTokenInModal.onClose();
   }, [router, params, selectTokenInModal]);
 
-  const filteredCoins = coins.filter(
-    (coin) =>
-      coin.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-      coin.symbol.toLowerCase().includes(searchValue.toLowerCase()) ||
-      coin.address.toLowerCase() === searchValue.toLowerCase()
-  );  
-
   const headContent = (
-    <div className={`bg-[#141619] rounded-xl border hover:border-violet-500 transition
-    ${isInputFocused ? 'border-violet-500' : 'border-[#31343d]'}`}>
+    <div className={`bg-[#141619] rounded-xl border hover:border-violet-500 transition ${
+    isInputFocused ? "border-violet-500" : "border-[#31343d]"}`}>
       <input
         type="text"
         placeholder="Search... (Symbol or Address)"
@@ -87,30 +84,40 @@ const SelectTokenInModal = () => {
     }
   }, [searchValue, provider]);
 
+
+  const tokens = chain ? tokenTable[chain] || [] : [];
+  const filteredTokens = tokens.filter(
+    (token) =>
+      token.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      token.symbol.toLowerCase().includes(searchValue.toLowerCase()) ||
+      token.address.toLowerCase() === searchValue.toLowerCase()
+  );
   const bodyContent = (
     <div>
-      {filteredCoins.length > 0 ? (
-        filteredCoins.map((coin, index) => (
-          <div key={index}>
-            <button onClick={() => handleClick('from', coin.address)}
-            className="py-1.5 text-md">
-              {coin.name} ({coin.symbol})
-            </button>
-            <hr className="border-[#31343d]" />
+      {filteredTokens.length > 0 ? (
+        <>
+          {filteredTokens.map((token: Token, index: number) => (
+            <div key={index}>
+              <button
+                onClick={() => handleClick('from', token.address)}
+                className="py-1.5 text-md"
+              >
+                {token.name} ({token.symbol})
+              </button>
+              <hr className="border-[#31343d]" />
+            </div>
+          ))}
+        </>
+      ) : (
+        <button onClick={() => handleClick('from', searchValue)}
+        className="py-1.5 text-md">
+          <div className="flex gap-1">
+            {tokenName} {tokenSymbol}
           </div>
-        )
-      )
-    ) : (
-      <button onClick={() => handleClick('from', searchValue)}
-      className="py-1.5 text-md">
-        <div className="flex gap-1">
-          {tokenName} {tokenSymbol}
-        </div>
-      </button>
+        </button>
       )}
     </div>
   );
-  
 
   return (
     <Modal
