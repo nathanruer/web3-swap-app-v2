@@ -9,7 +9,7 @@ const Navbar = () => {
       <div className="max-w-[2520px] mx-auto px-10">
         <div className="flex flex-row justify-between items-center">
           <Logo />
-          <ConnectButton chainStatus="icon" />
+          <ConnectButton chainStatus="none" />
         </div>
       </div>
     </div>

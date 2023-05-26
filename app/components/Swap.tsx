@@ -6,6 +6,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Suspense } from "react";
 
 import { useProvider, useAccount, useSendTransaction } from 'wagmi';
+import { useNetwork, useSwitchNetwork } from 'wagmi'
 
 import useSelectTokenOutModal from "@/app/hooks/useSelectTokenOutModal";
 import useSelectTokenInModal from '@/app/hooks/useSelectTokenInModal';
@@ -19,6 +20,7 @@ import FetchedPriceInCoingecko from './server_components/FetchedPriceInCoingecko
 import FetchedPriceOutCoingecko from './server_components/FetchedPriceOutCoingecko';
 import TokenBalance from './server_components/TokenBalance';
 import { formatAmount } from '../actions/formatAmount';
+import SwitchNetwork from './SwitchNetwork';
 
 interface SwapProps {
   chain?: string | null;
@@ -35,6 +37,18 @@ const Swap: React.FC<SwapProps> = ({
 
   const provider = useProvider();
   const { address: userAddress, isConnected: isUserConnected } = useAccount();
+
+  const { chain:connectedChain } = useNetwork()
+  const { switchNetwork } = useSwitchNetwork()
+  useEffect(() => {
+    if (connectedChain?.network !== chain) {
+      if (chain === "arbitrum") {
+        switchNetwork?.(42161)
+      } else if (chain === "ethereum") {
+        switchNetwork?.(1)
+      }
+    }
+  }, [chain]);
 
   const selectTokenInModal = useSelectTokenInModal();
   const selectTokenOutModal = useSelectTokenOutModal();
@@ -194,7 +208,9 @@ const Swap: React.FC<SwapProps> = ({
       <div className="w-full md:w-4/5 lg:w-3/5 xl:w-1/2 mx-auto rounded-3xl 
       bg-neutral-700/10 shadow-2xl shadow-[#141619] p-10">
 
-        {/* TODO: ADD A BUTTON "SWITCH CHAIN" THAT REDIRECT TO ?chain={newChain} */}
+        <SwitchNetwork 
+          chain={chain}
+        />
         
         <div className={`p-3 rounded-xl mb-1 bg-[#141619] gap-1
         justify-center items-center
