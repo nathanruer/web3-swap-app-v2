@@ -9,6 +9,7 @@ interface FetchedPriceOutCoingeckoProps {
   amountIn: string;
   provider: Provider;
   chain?: string | null | undefined,
+  chainId?: number | undefined;
 }
 
 const FetchedPriceOutCoingecko = async ({ 
@@ -16,7 +17,8 @@ const FetchedPriceOutCoingecko = async ({
   tokenOutAddress, 
   amountIn, 
   provider,
-  chain 
+  chain,
+  chainId,
 } : FetchedPriceOutCoingeckoProps) => {
   let amountOut = "";
   let fetchedPriceOutCoingecko: string | null = "";
@@ -24,7 +26,7 @@ const FetchedPriceOutCoingecko = async ({
   if (tokenInAddress && tokenOutAddress && amountIn && chain) {
     const selectedToken = tokenTable[chain]?.find((token) => token.address === tokenOutAddress);
     if (selectedToken) {
-      amountOut = await quoteAmount_1Inch(tokenInAddress, tokenOutAddress, amountIn, provider);
+      amountOut = await quoteAmount_1Inch(tokenInAddress, tokenOutAddress, amountIn, provider, chainId);
       fetchedPriceOutCoingecko = await fetchPriceCoingecko(selectedToken.coingeckoId, amountOut);
     }
   }

@@ -6,13 +6,14 @@ interface FetchedAmountOutProps {
   tokenOutAddress?: string;
   amountIn: string;
   provider: Provider;
+  chainId?: number | undefined,
 }
 
-const FetchedAmountOut = async ({ tokenInAddress, tokenOutAddress, amountIn, provider }: FetchedAmountOutProps) => {
+const FetchedAmountOut = async ({ tokenInAddress, tokenOutAddress, amountIn, provider, chainId }: FetchedAmountOutProps) => {
   let amountOut = "";
 
-  if (tokenInAddress && tokenOutAddress) {
-    amountOut = await quoteAmount_1Inch(tokenInAddress, tokenOutAddress, amountIn, provider);
+  if (tokenInAddress && tokenOutAddress && chainId) {
+    amountOut = await quoteAmount_1Inch(tokenInAddress, tokenOutAddress, amountIn, provider, chainId);
   }
 
   return (

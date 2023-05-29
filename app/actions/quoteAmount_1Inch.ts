@@ -9,9 +9,10 @@ export async function quoteAmount_1Inch(
   tokenOutAddress: string,
   amountIn: string,
   provider: Provider,
+  chainId: number | undefined,
 ): Promise<string> {
   //TODO: CHANGE APIURL FOR DIFFERENTS CHAINS
-  const apiUrl = 'https://api.1inch.io/v5.0/1/quote';
+  const apiUrl = `https://api.1inch.io/v5.0/${chainId?.toString()}/quote`;
 
   try {
     let amountInParsed: ethers.BigNumber;

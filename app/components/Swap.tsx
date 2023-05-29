@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useState, useMemo, useEffect } from 'react'
 import { Suspense } from "react";
 
-import { useProvider, useAccount, useSendTransaction } from 'wagmi';
+import { useProvider, useAccount, useSendTransaction, useWaitForTransaction } from 'wagmi';
 import { useNetwork, useSwitchNetwork } from 'wagmi'
 
 import useSelectTokenOutModal from "@/app/hooks/useSelectTokenOutModal";
@@ -21,6 +21,7 @@ import FetchedPriceOutCoingecko from './server_components/FetchedPriceOutCoingec
 import TokenBalance from './server_components/TokenBalance';
 import { formatAmount } from '../actions/formatAmount';
 import SwitchNetwork from './SwitchNetwork';
+import { networkMapping } from '../constants/networkMapping';
 
 interface SwapProps {
   chain?: string | null;
@@ -40,15 +41,14 @@ const Swap: React.FC<SwapProps> = ({
 
   const { chain:connectedChain } = useNetwork()
   const { switchNetwork } = useSwitchNetwork()
-  useEffect(() => {
-    if (connectedChain?.network !== chain) {
-      if (chain === "arbitrum") {
-        switchNetwork?.(42161)
-      } else if (chain === "ethereum") {
-        switchNetwork?.(1)
+  useEffect(() => {  
+    if (chain && connectedChain?.network !== chain) {
+      if (chain in networkMapping) {
+        const networkId = networkMapping[chain as keyof typeof networkMapping];
+        switchNetwork?.(networkId);
       }
     }
-  }, [chain]);
+  }, [chain, connectedChain]);
 
   const selectTokenInModal = useSelectTokenInModal();
   const selectTokenOutModal = useSelectTokenOutModal();
@@ -103,6 +103,7 @@ const Swap: React.FC<SwapProps> = ({
             tokenOutAddress={tokenOutAddress}
             amountIn={amountIn}
             provider={provider} 
+            chainId={connectedChain?.id}
           />
         </Suspense>
       )
@@ -124,6 +125,7 @@ const Swap: React.FC<SwapProps> = ({
               amountIn={amountIn}
               provider={provider} 
               chain={chain}
+              chainId={connectedChain?.id}
             />
           </div>
         </Suspense>
@@ -158,7 +160,7 @@ const Swap: React.FC<SwapProps> = ({
     data: undefined,
     value: undefined,
   });
-  const { data, sendTransaction } = useSendTransaction({
+  const { data:TxData, sendTransaction } = useSendTransaction({
     mode: 'recklesslyUnprepared',
     request: {
       from: userAddress,
@@ -167,6 +169,7 @@ const Swap: React.FC<SwapProps> = ({
       value: txDetails.value,
     },
   });
+  const { isLoading: isTxPending } = useWaitForTransaction({ hash: TxData?.hash })
   useEffect(() => {
     if (txDetails.to && txDetails.data && txDetails.value && isUserConnected) {
       sendTransaction();
@@ -176,27 +179,27 @@ const Swap: React.FC<SwapProps> = ({
   const [isApproved, setIsApproved] = useState(false);
   useEffect(() => {
     const checkApprovalStatus = async () => {
-      if (tokenInAddress && amountIn && userAddress) {
+      if (tokenInAddress && amountIn && userAddress && connectedChain) {
         const formattedAmountIn = await formatAmount(tokenInAddress, amountIn, provider);
-        const allowance = await axios.get(`https://api.1inch.io/v5.0/1/approve/allowance?tokenAddress=${tokenInAddress}&walletAddress=${userAddress}`);
-        setIsApproved(allowance.data.allowance > formattedAmountIn);
+        const allowance = await axios.get(`https://api.1inch.io/v5.0/${connectedChain.id}/approve/allowance?tokenAddress=${tokenInAddress}&walletAddress=${userAddress}`);
+        console.log(`{Amount in : ${formattedAmountIn}, Amount approved : ${allowance.data.allowance}}`)
+        setIsApproved(allowance.data.allowance >= formattedAmountIn);
       }
     };
     checkApprovalStatus();
-  }, [tokenInAddress, amountIn, provider, userAddress]);
+  }, [tokenInAddress, amountIn, provider, userAddress, connectedChain]);
 
   const handleSwap = async () => {
-    if (tokenInAddress && tokenOutAddress && amountIn) {
+    if (tokenInAddress && tokenOutAddress && amountIn && connectedChain) {
       const formattedAmountIn = await formatAmount(tokenInAddress, amountIn, provider);
       if (isApproved) {
-        const tx = await axios.get(`https://api.1inch.io/v5.0/1/swap?fromTokenAddress=${tokenInAddress}&toTokenAddress=${tokenOutAddress}}&amount=${formattedAmountIn}&fromAddress=${userAddress}&slippage=5`);
+        const tx = await axios.get(`https://api.1inch.io/v5.0/${connectedChain.id}/swap?fromTokenAddress=${tokenInAddress}&toTokenAddress=${tokenOutAddress}&amount=${formattedAmountIn}&fromAddress=${userAddress}&slippage=5`);
         setTxDetails(tx.data.tx);
       } else {
-        const allowance = await axios.get(`https://api.1inch.io/v5.0/1/approve/allowance?tokenAddress=${tokenInAddress}&walletAddress=${userAddress}`);
+        const allowance = await axios.get(`https://api.1inch.io/v5.0/${connectedChain.id}/approve/allowance?tokenAddress=${tokenInAddress}&walletAddress=${userAddress}`);
         if (allowance.data.allowance < formattedAmountIn) {
-          const approve = await axios.get(`https://api.1inch.io/v5.0/1/approve/transaction?tokenAddress=${tokenInAddress}&amount=${formattedAmountIn}`);
+          const approve = await axios.get(`https://api.1inch.io/v5.0/${connectedChain.id}/approve/transaction?tokenAddress=${tokenInAddress}&amount=${formattedAmountIn}`);
           setTxDetails(approve.data);
-          setIsApproved(true);
           return;
         }
       }
@@ -275,6 +278,7 @@ const Swap: React.FC<SwapProps> = ({
         </button>
 
       </div>
+
       <SelectTokenInModal 
         chain={chain}
       />

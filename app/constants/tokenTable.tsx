@@ -110,6 +110,12 @@ export const tokenTable: TokenList = {
       coingeckoId: 'weth',
     },
     {
+      name: "Arbitrum",
+      symbol: "ARB",
+      address: "0x912CE59144191C1204E64559FE8253a0e49E6548",
+      coingeckoId: "arbitrum",
+    },
+    {
       name: "GMX",
       symbol: "GMX",
       address: "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a",
